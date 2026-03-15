@@ -1,0 +1,34 @@
+import math
+
+# 无异常值的单维度损失计算
+def calc_loss_no_outlier(theta_pred, theta_true, d_pred, d_true, v_pred, v_true):
+    # 方向损失
+    delta_theta_rad = (theta_pred - theta_true) * math.pi / 180
+    l_dir = 1 - math.cos(delta_theta_rad)
+    
+    # 距离损失
+    l_dist = (d_pred - d_true) **2
+    
+    # 速度损失
+    l_speed = (v_pred - v_true)** 2 + 1.0 * max(0, -v_pred)
+    
+    return l_dir, l_dist, l_speed
+
+# 有异常值的单维度损失计算
+def calc_loss_with_outlier(theta_pred, theta_true, d_pred, d_true, v_pred, v_true):
+    # 方向损失（同场景1）
+    delta_theta_rad = (theta_pred - theta_true) * math.pi / 180
+    l_dir = 1 - math.cos(delta_theta_rad)
+    
+    # 距离损失（Huber Loss，delta=5）
+    delta_d = abs(d_pred - d_true)
+    if delta_d <= 5:
+        l_dist = 0.5 * (d_pred - d_true)**2
+    else:
+        l_dist = 5 * delta_d - 12.5
+    
+    # 速度损失（相对误差+非负惩罚）
+    delta_v = abs(v_pred - v_true)
+    l_speed = delta_v / (v_true + 1e-6) + 1.0 * max(0, -v_pred)
+    
+    return l_dir, l_dist, l_speed
